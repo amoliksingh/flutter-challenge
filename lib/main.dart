@@ -1,4 +1,6 @@
+import 'package:country_list_pick/country_list_pick.dart';
 import 'package:flutter/material.dart';
+import 'package:country_picker/country_picker.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,6 +27,12 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: const MyHomePage(title: 'Edit Profile'),
+      // home: Scaffold(
+      //   appBar: AppBar(
+      //     title: Text('Edit Profile'),
+      //   ),
+      //   body: MyAlert(),
+      // ),
     );
   }
 }
@@ -48,10 +56,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   String _firstname = "";
   String _lastname = "";
+  CountryCode _code = CountryCode();
   String _password = "";
+  String _oldpassword = "";
   String _newpassword = "";
   String _confirmpassword = "";
   bool _saved = false;
@@ -64,22 +73,56 @@ class _MyHomePageState extends State<MyHomePage> {
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
-      // print('ASDF $_password');
-      // print('ASDF $_saved');
-      // print('ASDF $_change');
-      // print('ASDF $_newpassword');
-      // print('ASDF $_confirmpassword');
-      _counter++;
-      if (_password != ""){
-        _saved = true;
+      if (!_saved) {
+        if (_password == ""){
+          showAlertDialog(context, "Password cannot be empty");
+        } else {
+          _saved = true;
+        }
       }
-      if (_change && _newpassword == _confirmpassword && _newpassword != ""){
-        _password = _newpassword;
-        _change = false;
-        _newpassword = "";
-        _confirmpassword = "";
+      if (_change) {
+        if (_password != _oldpassword){
+          showAlertDialog(context, "Old password is incorrect");
+        }
+        if (_newpassword != _confirmpassword){
+          showAlertDialog(context, "Passwords do not match");
+        } else if (_newpassword != ""){
+          _password = _newpassword;
+          _change = false;
+          _newpassword = "";
+          _confirmpassword = "";
+        } else {
+          showAlertDialog(context, "New password cannot be empty");
+        }
       }
     });
+  }
+
+  showAlertDialog(BuildContext context, String message) {
+    // Create button
+    Widget okButton = FlatButton(
+      child: Text("OK"),
+      onPressed: () {
+        Navigator.of(context).pop();
+      },
+    );
+
+    // Create AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Password Error"),
+      content: Text(message),
+      actions: [
+        okButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
   }
 
   @override
@@ -139,6 +182,70 @@ class _MyHomePageState extends State<MyHomePage> {
             onChanged: (input) => _lastname = input,
           ),
         ),
+
+            CountryListPick(
+                appBar: AppBar(
+                  backgroundColor: Colors.blue,
+                  title: Text('Choose a country'),
+                ),
+
+                // if you need custome picker use this
+                // pickerBuilder: (context, CountryCode countryCode){
+                //   return Row(
+                //     children: [
+                //       Image.asset(
+                //         countryCode.flagUri,
+                //         package: 'country_list_pick',
+                //       ),
+                //       Text(countryCode.code),
+                //       Text(countryCode.dialCode),
+                //     ],
+                //   );
+                // },
+
+                // To disable option set to false
+                theme: CountryTheme(
+                  isShowFlag: true,
+                  isShowTitle: true,
+                  isShowCode: true,
+                  isDownIcon: true,
+                  showEnglishName: true,
+                ),
+                // Set default value
+                initialSelection: '+62',
+                // or
+                // initialSelection: 'US'
+                onChanged: (code) => {
+                  if (code != null) {
+                    print(code.name),
+                    print(code.code),
+                    print(code.dialCode),
+                    print(code.flagUri),
+                },
+                },
+                // Whether to allow the widget to set a custom UI overlay
+                useUiOverlay: true,
+                // Whether the country list should be wrapped in a SafeArea
+                useSafeArea: false
+            ),
+
+            if (_saved && _change)
+              Container(
+                margin: EdgeInsets.only(left: 20.0),
+                height: 85,
+                child: TextFormField(
+                  obscureText: true,
+                  cursorColor: Color(0xFF3E8094),
+                  decoration: InputDecoration(
+                      labelText: "Old Password",
+                      labelStyle: TextStyle(
+                          color: Color(0xFF3E8094)),
+                      focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF3E8094)))),
+
+                  onChanged: (input) => _oldpassword = input,
+                ),
+              ),
             if (_change)
               Container(
                 margin: EdgeInsets.only(left: 20.0),
@@ -171,18 +278,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   onChanged: (input) => _confirmpassword = input,
                 ),
               ),
+              if (!_saved)
               Container(
-                margin: _saved ? EdgeInsets.all(25) : EdgeInsets.only(left: 20.0),
+                margin: EdgeInsets.only(left: 20.0),
                 height: 85,
-                child: _saved && !_change ? FlatButton(
-                  child: Text('Change Password', style: TextStyle(fontSize: 20.0),),
-                  color: Colors.orangeAccent,
-                  textColor: Colors.white,
-                  onPressed: () => {
-                  setState(() {
-                  _change = true;
-                  })},
-                ) : !_saved ? TextFormField(
+                child: TextFormField(
                   obscureText: true,
                   cursorColor: Color(0xFF3E8094),
                   decoration: InputDecoration(
@@ -193,8 +293,22 @@ class _MyHomePageState extends State<MyHomePage> {
                           borderSide: BorderSide(color: Color(0xFF3E8094)))),
 
                   onChanged: (input) => _password = input,
-                ) : null,
+                ),
               ),
+            if (_saved && !_change)
+            Container(
+              margin: EdgeInsets.all(25),
+              height: 85,
+              child: FlatButton(
+                child: Text('Change Password', style: TextStyle(fontSize: 20.0),),
+                color: Colors.orangeAccent,
+                textColor: Colors.white,
+                onPressed: () => {
+                  setState(() {
+                    _change = true;
+                  })},
+              ),
+            ),
 
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
@@ -228,3 +342,5 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+
